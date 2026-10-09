@@ -173,7 +173,7 @@
       if (
         enlace.protocol !== "https:" ||
         enlace.hostname !== "script.google.com" ||
-        !enlace.pathname.endsWith("/exec") ||
+       !(/\/(exec|dev)$/.test(enlace.pathname)) ||
         !id ||
         !/^BS-\d{6}$/.test(id)
       ) {
