@@ -1,179 +1,89 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <title>Lector QR | Casa IBBY México</title>
-
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-
   <style>
     * { box-sizing: border-box; }
-
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      margin: 0;
-      color: #333;
-    }
-
-    header {
-      background: #222;
-      color: white;
-      text-align: center;
-      padding: 22px;
-    }
-
-    main {
-      max-width: 520px;
-      margin: 30px auto;
-      padding: 24px;
-      background: white;
-      border-radius: 12px;
-      text-align: center;
-      box-shadow: 0 2px 8px #00000012;
-    }
-
-    button, .boton {
-      display: inline-block;
-      background: #26734d;
-      color: white;
-      padding: 13px 20px;
-      margin: 8px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      text-decoration: none;
-    }
-
+    body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; color: #333; }
+    header { background: #222; color: white; text-align: center; padding: 22px; }
+    main { max-width: 520px; margin: 30px auto; padding: 24px; background: white; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px #00000012; }
+    button, .boton { display: inline-block; background: #26734d; color: white; padding: 13px 20px; margin: 8px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; text-decoration: none; }
     .secundario { background: #555; }
-
-    #reader {
-      width: 100%;
-      margin: 20px auto;
-    }
-
-    #resultado {
-      padding: 15px;
-      margin-top: 15px;
-      background: #e8f3ed;
-      border-radius: 8px;
-      display: none;
-      overflow-wrap: anywhere;
-    }
-
-    #mensaje {
-      margin: 15px 0;
-    }
+    #reader { width: 100%; margin: 20px auto; }
+    #resultado { padding: 15px; margin-top: 15px; background: #e8f3ed; border-radius: 8px; display: none; overflow-wrap: anywhere; }
+    #mensaje { margin: 15px 0; }
   </style>
 </head>
-
 <body>
-
 <header>
   <h2>Casa IBBY México</h2>
   <p>Lector de códigos QR | Recepción</p>
 </header>
-
 <main>
   <h2>Identificación de visitantes</h2>
-
   <p>Coloca el código QR frente a la cámara.</p>
-
-  <button id="iniciar" onclick="iniciarCamara()">
-    📷 Activar cámara
-  </button>
-
-  <button class="secundario" onclick="detenerCamara()">
-    Detener cámara
-  </button>
-
+  <button id="iniciar" onclick="iniciarCamara()">📷 Activar cámara</button>
+  <button class="secundario" onclick="detenerCamara()">Detener cámara</button>
   <div id="reader"></div>
-
   <p id="mensaje">Lector listo para iniciar.</p>
-
   <div id="resultado">
     <h3>Código QR reconocido</h3>
     <p id="identificador"></p>
-    <a id="abrirFicha" class="boton" href="#" rel="noopener">
-      Abrir ficha de la persona
-    </a>
+    <a id="abrirFicha" class="boton" href="#" rel="noopener">Abrir ficha de la persona</a>
   </div>
 </main>
-
 <script>
   let escaner = null;
   let procesando = false;
 
   async function iniciarCamara() {
     const mensaje = document.getElementById("mensaje");
-
     if (escaner && escaner.isScanning) return;
-
     if (typeof Html5Qrcode === "undefined") {
       mensaje.textContent = "No se pudo cargar el lector QR.";
       return;
     }
-
     procesando = false;
     document.getElementById("resultado").style.display = "none";
     mensaje.textContent = "Activando cámara...";
-
     try {
-      if (!escaner) {
-        escaner = new Html5Qrcode("reader");
-      }
-
+      if (!escaner) escaner = new Html5Qrcode("reader");
       await escaner.start(
         { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 220, height: 220 }
-        },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
         qrReconocido,
         () => {}
       );
-
-      mensaje.textContent = "Cámara activa. Acerca el código QR.";
-
+      if (!procesando) mensaje.textContent = "Cámara activa. Acerca el código QR.";
     } catch (error) {
-      mensaje.textContent =
-        "No se pudo activar la cámara: " + error;
+      mensaje.textContent = "No se pudo activar la cámara: " + error;
     }
   }
 
   async function detenerCamara() {
     if (!escaner) return;
-
     try {
-      if (escaner.isScanning) {
-        await escaner.stop();
-      }
+      if (escaner.isScanning) await escaner.stop();
       escaner.clear();
     } catch (error) {
       console.error(error);
     }
-
     escaner = null;
   }
 
   async function qrReconocido(texto) {
     if (procesando) return;
-
     let enlace;
-
     try {
       enlace = new URL(texto.trim());
-
       const id = enlace.searchParams.get("id");
-
       if (
         enlace.protocol !== "https:" ||
         enlace.hostname !== "script.google.com" ||
-       !(/\/(exec|dev)$/.test(enlace.pathname)) ||
+        !/\/(exec|dev)$/.test(enlace.pathname) ||
         !id ||
         !/^BS-\d{6}$/.test(id)
       ) {
@@ -181,28 +91,22 @@
           "Este código no corresponde a un QR válido de acceso.";
         return;
       }
-
     } catch (error) {
       document.getElementById("mensaje").textContent =
         "El QR no contiene un enlace de acceso válido.";
       return;
     }
-
     procesando = true;
-
     await detenerCamara();
-
     document.getElementById("identificador").textContent =
       "ID: " + enlace.searchParams.get("id");
-
     document.getElementById("abrirFicha").href = enlace.href;
-
     document.getElementById("resultado").style.display = "block";
-
     document.getElementById("mensaje").textContent =
       "Lectura correcta. Puedes abrir la ficha.";
   }
 </script>
-
 </body>
 </html>
+
+
